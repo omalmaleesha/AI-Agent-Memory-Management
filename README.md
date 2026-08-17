@@ -39,9 +39,14 @@ Neo4j Persistent Memory
 
 **Python · LangGraph · LangChain · Groq · FastAPI · Neo4j · PyMuPDF**
 
-### 🎯 What This Project Demonstrates
+### 🎯 Why I Built This
 
-This project demonstrates my ability to design and implement **AI agent architectures, backend systems, LLM workflows, persistent data systems, retrieval pipelines, and modular software architecture** — not just call an LLM API.
+I created this project as a **hobby project in my free time** to explore how AI agents can maintain useful long-term memory instead of starting from zero in every conversation.
+
+While building it, I wanted to strengthen my practical skills in **AI agents, LangGraph, LLM workflows, memory management, Neo4j, retrieval systems, and backend architecture** by solving a problem that I find interesting.
+
+This project is continuously evolving as I experiment with better ways to **store, retrieve, organize, and use memory in AI agents**.
+
 
 ### 🔮 Future Work
 
