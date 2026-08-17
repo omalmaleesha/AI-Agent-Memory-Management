@@ -9,11 +9,11 @@ class Settings(BaseSettings):
 
     # Neo4j
     NEO4J_URI: str
-    NEO4J_USERNAME: str = "neo4j"
+    NEO4J_USERNAME: str
     NEO4J_PASSWORD: str
 
     # Groq
-    GROQ_API_KEY: str
+    GROQ_API_KEY: str 
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
 
     # Embedding
