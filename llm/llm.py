@@ -118,13 +118,7 @@ class LLMService:
         memories = []
 
         if should_save:
-
             memory_type = "semantic"
-
-            # -------------------------------------------------
-            # PROCEDURAL
-            # -------------------------------------------------
-
             if any(
                 keyword in combined
                 for keyword in [
@@ -138,11 +132,6 @@ class LLMService:
                 ]
             ):
                 memory_type = "procedural"
-
-            # -------------------------------------------------
-            # EPISODIC
-            # -------------------------------------------------
-
             elif any(
                 keyword in combined
                 for keyword in [
@@ -155,7 +144,6 @@ class LLMService:
                 ]
             ):
                 memory_type = "episodic"
-
             memories.append(
                 {
                     "type": memory_type,
@@ -173,25 +161,16 @@ class LLMService:
             "memories": memories,
         }
 
-    # =========================================================
     # FALLBACK RESPONSE
-    # =========================================================
-
-    def _generate_fallback_response(
-        self,
-        prompt: str,
-    ) -> str:
-
+    def _generate_fallback_response(self,prompt: str,) -> str:
         user_request = self._extract_section(
             prompt,
             "USER REQUEST:",
         )
-
         context = self._extract_section(
             prompt,
             "MEMORY CONTEXT:",
         )
-
         user_request = user_request.strip()
         context = context.strip()
 
@@ -215,29 +194,14 @@ class LLMService:
             "so I am responding with a local fallback."
         )
 
-    # =========================================================
     # FALLBACK MESSAGE
-    # =========================================================
-
-    def _fallback_message(
-        self,
-        prompt: str,
-    ) -> SimpleNamespace:
-
+    def _fallback_message(self,prompt: str,) -> SimpleNamespace:
         return SimpleNamespace(
             content=self._generate_fallback_response(prompt)
         )
 
-    # =========================================================
     # FALLBACK STRUCTURED OUTPUT
-    # =========================================================
-
-    def _fallback_structured_output(
-        self,
-        schema: Type,
-        prompt: str,
-    ):
-
+    def _fallback_structured_output(self,schema: Type,prompt: str,):
         schema_name = getattr(
             schema,
             "__name__",
