@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-
 from neo4j.exceptions import ServiceUnavailable
+from agent.graph import agent_graph
+from llm.llm import llm_service
 
 router = APIRouter()
 
@@ -14,22 +15,14 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
 
-from agent.graph import agent_graph
-from llm.llm import llm_service
-
-
 router = APIRouter(
     prefix="/chat",
     tags=["Chat"]
 )
 
 
-@router.post(
-    "",
-    response_model=ChatResponse
-)
+@router.post("",response_model=ChatResponse)
 def chat(request: ChatRequest):
-
     initial_state = {
         "user_id": request.user_id,
         "session_id": request.session_id,

@@ -1,12 +1,7 @@
 # app/agent/nodes/memory_writer.py
-
 from agent.state import AgentState
 
-
-def memory_writer_node(
-    state: AgentState,
-    memory_manager
-) -> dict:
+def memory_writer_node(state: AgentState,memory_manager) -> dict:
 
     if not state.get(
         "should_save_memory",

@@ -1,30 +1,21 @@
 # Its job is:
 # Decide which memories are actually needed.
-#
 # Examples:
-#
 # "What technologies do I use?"
 # -> semantic
-#
 # "What did we discuss yesterday?"
 # -> episodic
-#
 # "How should I deploy this application?"
 # -> procedural
-
 
 # app/agent/nodes/memory_router.py
 
 import json
 from typing import Literal
-
 from pydantic import BaseModel, ValidationError
-
 from agent.state import AgentState
 
-
 class MemoryRouting(BaseModel):
-
     required_memories: list[
         Literal[
             "semantic",
@@ -34,10 +25,7 @@ class MemoryRouting(BaseModel):
     ]
 
 
-def memory_router_node(
-    state: AgentState,
-    llm,
-) -> dict:
+def memory_router_node(state: AgentState,llm,) -> dict:
 
     print("\n========================================")
     print("[MEMORY ROUTER] START")
@@ -48,47 +36,47 @@ def memory_router_node(
     print(f"[MEMORY ROUTER] User input: {user_input}")
 
     prompt = f"""
-You are a memory routing system.
+    You are a memory routing system.
 
-Your job is to determine which memory types are
-actually useful for answering the user's request.
+    Your job is to determine which memory types are
+    actually useful for answering the user's request.
 
-Available memory types:
+    Available memory types:
 
-semantic:
-Durable facts, preferences, profile information,
-skills, technologies, and knowledge about the user.
+    semantic:
+    Durable facts, preferences, profile information,
+    skills, technologies, and knowledge about the user.
 
-episodic:
-Past conversations, previous events,
-previous tasks, meetings, and historical interactions.
+    episodic:
+    Past conversations, previous events,
+    previous tasks, meetings, and historical interactions.
 
-procedural:
-Instructions, workflows, rules,
-procedures, and how-to knowledge.
+    procedural:
+    Instructions, workflows, rules,
+    procedures, and how-to knowledge.
 
-Rules:
+    Rules:
 
-1. Select ONLY memory types that are useful.
-2. Do not select a memory type just because it exists.
-3. You may select multiple memory types.
-4. Return an empty list if no memory is required.
-5. You MUST return valid JSON.
-6. Do not return markdown.
-7. Do not add explanations.
+    1. Select ONLY memory types that are useful.
+    2. Do not select a memory type just because it exists.
+    3. You may select multiple memory types.
+    4. Return an empty list if no memory is required.
+    5. You MUST return valid JSON.
+    6. Do not return markdown.
+    7. Do not add explanations.
 
-Return exactly this format:
+    Return exactly this format:
 
-{{
-    "required_memories": [
-        "semantic"
-    ]
-}}
+    {{
+        "required_memories": [
+            "semantic"
+        ]
+    }}
 
-User request:
+    User request:
 
-{user_input}
-"""
+    {user_input}
+    """
 
     print("[MEMORY ROUTER] Sending request to LLM...")
 
@@ -96,7 +84,6 @@ User request:
 
         # IMPORTANT:
         # Do NOT use with_structured_output()
-        #
         # We use normal LLM invocation with JSON mode.
         response = llm.invoke(
             prompt,
@@ -106,25 +93,13 @@ User request:
         )
 
         print("[MEMORY ROUTER] LLM response received")
-
         content = response.content
-
         print(f"[MEMORY ROUTER] Raw response: {content}")
-
-        # ---------------------------------------------
         # Parse JSON
-        # ---------------------------------------------
-
         data = json.loads(content)
-
         print(f"[MEMORY ROUTER] Parsed JSON: {data}")
-
-        # ---------------------------------------------
         # Validate with Pydantic
-        # ---------------------------------------------
-
         routing = MemoryRouting.model_validate(data)
-
         required_memories = routing.required_memories
 
         print(

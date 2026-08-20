@@ -13,25 +13,25 @@ class AgentState(TypedDict):
     session_id: str
     user_input: str
 
-    #Conversation ───────────────
+    #Conversation 
     messages: Annotated[list[BaseMessage], add_messages]
 
-    #Memory Routing ───────────────
+    #Memory Routing 
     required_memories: list[MemoryType]
 
-    #Retrieved Memories ───────────────
+    #Retrieved Memories 
     semantic_memories: list[dict]
     episodic_memories: list[dict]
     procedural_memories: list[dict]
 
-    #Working Context ───────────────
+    #Working Context
     context: str
 
-    #Agent ───────────────
+    #Agent 
     response: str
 
-    #Memory Writing ───────────────
+    #Memory Writing 
     extracted_memories: list[dict]
 
-    #Control ───────────────
+    #Control 
     should_save_memory: bool

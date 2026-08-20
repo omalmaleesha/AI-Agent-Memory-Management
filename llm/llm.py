@@ -1,65 +1,36 @@
 from types import SimpleNamespace
 from typing import Any, Type
-
 from groq import AuthenticationError
 from langchain_groq import ChatGroq
-
 from config.settings import settings
 import json
 
-
 class LLMService:
-
     def __init__(self):
         self.available = bool(settings.GROQ_API_KEY)
-
         if not self.available:
             self.model = None
             return
-
         self.model = ChatGroq(
             api_key=settings.GROQ_API_KEY,
             model=settings.GROQ_MODEL,
             temperature=0.2,
         )
 
-    # =========================================================
     # PROMPT HELPERS
-    # =========================================================
-
-    def _extract_section(
-        self,
-        prompt: str,
-        marker: str,
-    ) -> str:
-
+    def _extract_section(self,prompt: str,marker: str,) -> str:
         if marker not in prompt:
             return ""
-
         section = prompt.split(marker, 1)[1]
-
         if "\n\n" in section:
             section = section.split("\n\n", 1)[0]
-
         return section.strip()
 
-    # =========================================================
     # LOCAL MEMORY ROUTING FALLBACK
-    # =========================================================
-
-    def _route_memories(
-        self,
-        user_request: str,
-    ) -> list[str]:
-
+    def _route_memories(self,user_request: str,) -> list[str]:
         text = user_request.lower()
-
         required: list[str] = []
-
-        # -----------------------------------------------------
         # SEMANTIC
-        # -----------------------------------------------------
-
         if any(
             keyword in text
             for keyword in [
@@ -76,11 +47,7 @@ class LLMService:
             ]
         ):
             required.append("semantic")
-
-        # -----------------------------------------------------
         # EPISODIC
-        # -----------------------------------------------------
-
         if any(
             keyword in text
             for keyword in [
@@ -98,11 +65,7 @@ class LLMService:
             ]
         ):
             required.append("episodic")
-
-        # -----------------------------------------------------
         # PROCEDURAL
-        # -----------------------------------------------------
-
         if any(
             keyword in text
             for keyword in [
@@ -121,28 +84,17 @@ class LLMService:
             ]
         ):
             required.append("procedural")
-
         return list(dict.fromkeys(required))
-
-    # =========================================================
     # LOCAL MEMORY EXTRACTION FALLBACK
-    # =========================================================
-
-    def _extract_memories(
-        self,
-        prompt: str,
-    ):
-
+    def _extract_memories(self,prompt: str,):
         user_input = self._extract_section(
             prompt,
             "USER:",
         )
-
         assistant_response = self._extract_section(
             prompt,
             "ASSISTANT:",
         )
-
         combined = (
             f"{user_input}\n{assistant_response}"
         ).lower()
@@ -631,14 +583,8 @@ class LLMService:
                 prompt
             )
 
-    # =========================================================
     # STRUCTURED OUTPUT
-    # =========================================================
-
-    def with_structured_output(
-        self,
-        schema: Type,
-    ):
+    def with_structured_output(self,schema: Type,):
         """
         Create a structured-output LLM wrapper.
 
@@ -652,37 +598,20 @@ class LLMService:
 
             result = router.invoke(prompt)
         """
-
-        # -----------------------------------------------------
         # NO API KEY
-        # -----------------------------------------------------
-
         if not self.available or self.model is None:
-
             parent = self
 
             class StructuredLLMWrapper:
-
                 def __init__(self):
                     self.output_schema = schema
-
-                def invoke(
-                    self,
-                    prompt: str,
-                    **kwargs,
-                ):
-
+                def invoke(self,prompt: str,**kwargs,):
                     return parent._fallback_structured_output(
                         self.output_schema,
                         prompt,
                     )
 
-                async def ainvoke(
-                    self,
-                    prompt: str,
-                    **kwargs,
-                ):
-
+                async def ainvoke(self,prompt: str,**kwargs,):
                     return parent._fallback_structured_output(
                         self.output_schema,
                         prompt,
@@ -690,12 +619,8 @@ class LLMService:
 
             return StructuredLLMWrapper()
 
-        # -----------------------------------------------------
         # CREATE STRUCTURED MODEL
-        # -----------------------------------------------------
-
         try:
-
             structured_model = (
                 self.model.with_structured_output(
                     schema
@@ -703,21 +628,15 @@ class LLMService:
             )
 
         except Exception as exc:
-
             print(
                 "[LLM SERVICE] Could not create structured model:",
                 type(exc).__name__,
                 str(exc),
             )
-
             structured_model = None
 
-        # -----------------------------------------------------
         # WRAPPER
-        # -----------------------------------------------------
-
         class StructuredLLMWrapper:
-
             def __init__(
                 self,
                 parent,
@@ -728,35 +647,26 @@ class LLMService:
                 self.runnable = runnable
                 self.output_schema = output_schema
 
-            def invoke(
-                self,
-                prompt: str,
-                **kwargs,
-            ):
-
+            def invoke(self,prompt: str,**kwargs,):
                 if self.runnable is None:
-
                     return self.parent._fallback_structured_output(
                         self.output_schema,
                         prompt,
                     )
 
                 try:
-
                     return self.runnable.invoke(
                         prompt,
                         **kwargs,
                     )
 
                 except AuthenticationError:
-
                     return self.parent._fallback_structured_output(
                         self.output_schema,
                         prompt,
                     )
 
                 except Exception as exc:
-
                     print(
                         "[LLM SERVICE] Structured output failed:",
                         type(exc).__name__,
@@ -768,35 +678,26 @@ class LLMService:
                         prompt,
                     )
 
-            async def ainvoke(
-                self,
-                prompt: str,
-                **kwargs,
-            ):
-
+            async def ainvoke(self,prompt: str,**kwargs,):
                 if self.runnable is None:
-
                     return self.parent._fallback_structured_output(
                         self.output_schema,
                         prompt,
                     )
 
                 try:
-
                     return await self.runnable.ainvoke(
                         prompt,
                         **kwargs,
                     )
 
                 except AuthenticationError:
-
                     return self.parent._fallback_structured_output(
                         self.output_schema,
                         prompt,
                     )
 
                 except Exception as exc:
-
                     print(
                         "[LLM SERVICE] Async structured output failed:",
                         type(exc).__name__,
@@ -814,9 +715,5 @@ class LLMService:
             schema,
         )
 
-
-# =============================================================
 # SINGLETON
-# =============================================================
-
 llm_service = LLMService()

@@ -1,14 +1,7 @@
 # app/agent/nodes/memory_retriever.py
-
 import time
-
 from agent.state import AgentState
-
-
-def memory_retriever_node(
-    state: AgentState,
-    memory_manager,
-) -> dict:
+def memory_retriever_node(state: AgentState,memory_manager) -> dict:
 
     start_time = time.perf_counter()
 
@@ -17,10 +10,6 @@ def memory_retriever_node(
     print("=" * 70)
 
     try:
-        # =====================================================
-        # INPUT
-        # =====================================================
-
         user_id = state["user_id"]
         user_input = state["user_input"]
 
@@ -35,26 +24,18 @@ def memory_retriever_node(
             f"[RETRIEVER] required_memories="
             f"{required_memories}"
         )
-
-        # =====================================================
-        # MULTI-MEMORY RETRIEVAL
-        # =====================================================
-
         print("\n[MULTI MEMORY RETRIEVAL START]")
 
         # If the router provided required memory types,
         # we use them to decide which memory systems to search.
-        #
         # If the router returns an empty list, search all
         # memory types.
 
         if not required_memories:
-
             print(
                 "[RETRIEVER] Router determined that "
                 "no memory is required."
             )
-
             memories = {
                 "semantic": [],
                 "episodic": [],
@@ -64,7 +45,6 @@ def memory_retriever_node(
         else:
 
             memories = {}
-
             if "semantic" in required_memories:
                 memories["semantic"] = (
                     memory_manager.search_semantic_memory(
@@ -95,10 +75,6 @@ def memory_retriever_node(
                     or []
                 )
 
-        # =====================================================
-        # NORMALIZE RESULTS
-        # =====================================================
-
         semantic_memories = memories.get(
             "semantic",
             [],
@@ -115,23 +91,10 @@ def memory_retriever_node(
         )
 
         print("\n[RETRIEVAL RESULTS]")
-
-        print(
-            f"semantic={len(semantic_memories)}"
-        )
-
-        print(
-            f"episodic={len(episodic_memories)}"
-        )
-
-        print(
-            f"procedural={len(procedural_memories)}"
-        )
-
-        # =====================================================
+        print(f"semantic={len(semantic_memories)}")
+        print(f"episodic={len(episodic_memories)}")
+        print(f"procedural={len(procedural_memories)}")
         # SCORE MEMORIES
-        # =====================================================
-
         print("\n[MEMORY SCORING START]")
 
         scored_memories = (
@@ -144,11 +107,7 @@ def memory_retriever_node(
             f"[MEMORY SCORING SUCCESS] "
             f"candidates={len(scored_memories)}"
         )
-
-        # =====================================================
         # MEMORY FUSION
-        # =====================================================
-
         print("\n[MEMORY FUSION START]")
 
         fused_memories = (
@@ -162,10 +121,7 @@ def memory_retriever_node(
             f"[MEMORY FUSION SUCCESS] "
             f"selected={len(fused_memories)}"
         )
-
-        # =====================================================
         # PRINT SELECTED MEMORIES
-        # =====================================================
 
         print("\n[SELECTED MEMORIES]")
 
@@ -189,10 +145,8 @@ def memory_retriever_node(
                 f"type={memory_type} "
                 f"score={score:.4f}"
             )
-
-        # =====================================================
+            
         # SUCCESS
-        # =====================================================
 
         elapsed = (
             time.perf_counter() - start_time
@@ -205,22 +159,15 @@ def memory_retriever_node(
 
         print("=" * 70)
 
-        # =====================================================
         # STATE UPDATE
-        # =====================================================
 
         return {
-
             # Original individual memory results
             "semantic_memories": semantic_memories,
-
             "episodic_memories": episodic_memories,
-
             "procedural_memories": procedural_memories,
-
             # New fused/ranked memories
             "scored_memories": scored_memories,
-
             "retrieved_memories": fused_memories,
         }
 
@@ -229,23 +176,10 @@ def memory_retriever_node(
         elapsed = (
             time.perf_counter() - start_time
         )
-
-        print(
-            f"\n[NODE ERROR] memory_retriever"
-        )
-
-        print(
-            f"[ERROR TYPE] {type(e).__name__}"
-        )
-
-        print(
-            f"[ERROR MESSAGE] {str(e)}"
-        )
-
-        print(
-            f"[NODE TIME] {elapsed:.4f}s"
-        )
-
+        print(f"\n[NODE ERROR] memory_retriever")
+        print(f"[ERROR TYPE] {type(e).__name__}")
+        print(f"[ERROR MESSAGE] {str(e)}")
+        print(f"[NODE TIME] {elapsed:.4f}s")
         print("=" * 70)
 
         raise
