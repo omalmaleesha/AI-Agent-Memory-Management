@@ -1,7 +1,5 @@
 from typing import Any
-
 from database.neo4j import Neo4jClient
-
 from memory.semantic.memory.semantic import SemanticMemoryManager
 from memory.episodic.memory.episodic import EpisodicMemoryManager
 from memory.procedural.memory.procedural import ProceduralMemoryManager

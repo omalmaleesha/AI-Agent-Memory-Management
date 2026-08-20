@@ -8,10 +8,7 @@ from memory.semantic.memory.semantic import (
 from llm.llm import llm_service
 
 
-def load_semantic_memory(
-    pdf_path: str,
-    user_id: str,
-):
+def load_semantic_memory(pdf_path: str,user_id: str,):
 
     print("\n====================================")
     print("[MEMORY LOADER] START")
@@ -22,35 +19,26 @@ def load_semantic_memory(
     # =========================================================
 
     print("\n[1/5] Loading PDF...")
-
     text = load_pdf(pdf_path)
-
     if not text.strip():
-
         print(
             "[MEMORY LOADER] PDF contains no "
             "extractable text."
         )
-
         return
 
     print(
         f"[MEMORY LOADER] PDF text loaded: "
         f"{len(text)} characters"
     )
-
     # =========================================================
     # 2. CONNECT TO NEO4J
     # =========================================================
-
     print("\n[2/5] Connecting to Neo4j...")
-
     neo4j_client = Neo4jClient()
-
     semantic_manager = SemanticMemoryManager(
         neo4j_client
     )
-
     # =========================================================
     # 3. ENSURE USER EXISTS
     # =========================================================

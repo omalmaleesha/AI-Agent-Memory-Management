@@ -13,12 +13,7 @@ class Neo4jClient:
     def close(self):
         self.driver.close()
 
-    def execute(
-        self,
-        query: str,
-        parameters: dict | None = None
-    ):
-
+    def execute(self,query: str,parameters: dict | None = None):
         with self.driver.session() as session:
             result = session.run(
                 query,
