@@ -1,15 +1,9 @@
 import uuid
 from datetime import datetime, timezone
-
 from database.neo4j import Neo4jClient
 
-
 class EpisodicMemoryManager:
-
-    def __init__(
-        self,
-        db: Neo4jClient
-    ):
+    def __init__(self,db: Neo4jClient):
         self.db = db
 
     def create(
@@ -22,7 +16,6 @@ class EpisodicMemoryManager:
     ):
 
         episode_id = str(uuid.uuid4())
-
         timestamp = datetime.now(
             timezone.utc
         ).isoformat()
@@ -50,7 +43,6 @@ class EpisodicMemoryManager:
 
         RETURN e
         """
-
         return self.db.execute(
             query,
             {
@@ -64,12 +56,7 @@ class EpisodicMemoryManager:
             }
         )
 
-    def get_recent(
-        self,
-        user_id: str,
-        limit: int = 10
-    ):
-
+    def get_recent(self,user_id: str,limit: int = 10):
         query = """
         MATCH (u:User {id: $user_id})
               -[:HAS_EPISODE]->
@@ -90,13 +77,7 @@ class EpisodicMemoryManager:
             }
         )
 
-    def search(
-        self,
-        user_id: str,
-        query: str,
-        limit: int = 5,
-    ):
-
+    def search(self,user_id: str,query: str,limit: int = 5,):
         cypher = """
         MATCH (u:User {id: $user_id})
               -[:HAS_EPISODIC_MEMORY]->
@@ -112,7 +93,6 @@ class EpisodicMemoryManager:
 
         LIMIT $limit
         """
-
         return self.db.execute(
             cypher,
             {
