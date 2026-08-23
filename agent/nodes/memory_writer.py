@@ -2,6 +2,8 @@
 from agent.state import AgentState
 
 def memory_writer_node(state: AgentState,memory_manager) -> dict:
+    
+    print("Start Memory Writer Node")
 
     if not state.get(
         "should_save_memory",
@@ -16,6 +18,8 @@ def memory_writer_node(state: AgentState,memory_manager) -> dict:
 
     user_id = state["user_id"]
     session_id = state["session_id"]
+    
+    print(f"[MEMORY WRITER] memorys={memories} user_id ={user_id}")
 
     for memory in memories:
 

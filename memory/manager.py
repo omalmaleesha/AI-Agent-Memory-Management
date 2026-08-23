@@ -266,6 +266,92 @@ class MemoryManager:
         )
 
         return scored_memories
+    
+    
+    # =========================================================
+# MEMORY STORAGE
+# =========================================================
+
+    def store_memory(
+        self,
+        user_id: str,
+        memory_type: str,
+        content: str,
+        session_id: str | None = None,
+        importance: str | None = None,
+        confidence: str | None = None,
+    ):
+
+        print("\n" + "=" * 70)
+        print("[MEMORY STORAGE START]")
+        print("=" * 70)
+
+
+        try:
+
+            # -------------------------------------------------
+            # SEMANTIC MEMORY
+            # -------------------------------------------------
+
+            if memory_type == "semantic":
+
+                result = self.semantic.create(
+                    user_id=user_id,
+                    content=content,
+                    importance=importance,
+                    confidence=confidence,
+                )
+
+            # -------------------------------------------------
+            # EPISODIC MEMORY
+            # -------------------------------------------------
+
+            elif memory_type == "episodic":
+
+                result = self.episodic.create(
+                    user_id=user_id,
+                    session_id=session_id,
+                    content=content,
+                    importance=importance,
+                    confidence=confidence,
+                )
+
+            # -------------------------------------------------
+            # PROCEDURAL MEMORY
+            # -------------------------------------------------
+
+            elif memory_type == "procedural":
+
+                result = self.procedural.store(
+                    user_id=user_id,
+                    content=content,
+                )
+
+            else:
+
+                raise ValueError(
+                    f"Unsupported memory type: {memory_type}"
+                )
+
+            print(
+                f"[MEMORY STORAGE SUCCESS] "
+                f"type={memory_type} "
+                f"user_id={user_id}"
+            )
+
+            print("=" * 70)
+
+            return result
+
+        except Exception as e:
+
+            print(
+                f"[MEMORY STORAGE ERROR] "
+                f"type={memory_type} "
+                f"error={repr(e)}"
+            )
+
+            raise
 
     # =========================================================
     # MEMORY FUSION

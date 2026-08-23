@@ -46,6 +46,7 @@ def memory_retriever_node(state: AgentState,memory_manager) -> dict:
 
             memories = {}
             if "semantic" in required_memories:
+                
                 memories["semantic"] = (
                     memory_manager.search_semantic_memory(
                         user_id=user_id,
@@ -56,6 +57,7 @@ def memory_retriever_node(state: AgentState,memory_manager) -> dict:
                 )
 
             if "episodic" in required_memories:
+                
                 memories["episodic"] = (
                     memory_manager.search_episodic_memory(
                         user_id=user_id,
