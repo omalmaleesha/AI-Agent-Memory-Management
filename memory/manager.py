@@ -300,6 +300,7 @@ class MemoryManager:
                     content=content,
                     importance=importance,
                     confidence=confidence,
+                    check_duplicate=True,
                 )
 
             # -------------------------------------------------
@@ -314,6 +315,7 @@ class MemoryManager:
                     content=content,
                     importance=importance,
                     confidence=confidence,
+                    check_duplicate=True,
                 )
 
             # -------------------------------------------------

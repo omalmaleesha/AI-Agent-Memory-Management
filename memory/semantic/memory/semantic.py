@@ -1,3 +1,4 @@
+from multiprocessing.reduction import duplicate
 import uuid
 from datetime import datetime, timezone
 
@@ -49,6 +50,7 @@ class SemanticMemoryManager:
         importance: float = 0.5,
         confidence: float = 1.0,
         embedding: list[float] | None = None,
+        check_duplicate: bool = True,
     ):
         """
         Create a semantic memory and connect it to the user.
@@ -57,6 +59,24 @@ class SemanticMemoryManager:
         # -----------------------------------------------------
         # Validate content
         # -----------------------------------------------------
+        
+        if check_duplicate:
+            duplicate = self.check_duplicate(
+                user_id=user_id,
+                content=content,
+            )
+
+        if duplicate:
+
+            print(
+                "[SEMANTIC MEMORY] Duplicate found. "
+                "Skipping storage."
+            )
+
+            return {
+                "status": "duplicate",
+                "existing_memory": duplicate,
+            }
 
         if not content or not content.strip():
             print(
@@ -137,6 +157,57 @@ class SemanticMemoryManager:
                 "embedding": embedding,
             },
         )
+        
+    def check_duplicate(
+        self,
+        user_id: str,
+        content: str,
+        threshold: float = 0.90,
+    ) -> dict | None:
+        """
+        Check whether a semantically similar memory
+        already exists for this user.
+        """
+
+        print("\n" + "=" * 70)
+        print("[SEMANTIC DUPLICATE CHECK START]")
+        print("=" * 70)
+
+        # Search for the closest existing semantic memory
+        results = self.search(
+            user_id=user_id,
+            query=content,
+            limit=1,
+        )
+
+        if not results:
+            print("[SEMANTIC DUPLICATE CHECK] No existing memory found")
+            return None
+
+        best_match = results[0]
+
+        # Adjust this depending on your search result structure
+        similarity = float(
+            best_match.get("relevance_score", 0.0)
+        )
+
+        print(
+            f"[SEMANTIC DUPLICATE CHECK] "
+            f"similarity={similarity:.4f}"
+        )
+
+        if similarity >= threshold:
+
+            print(
+                "[SEMANTIC DUPLICATE DETECTED] "
+                f"threshold={threshold}"
+            )
+
+            return best_match
+
+        print("[SEMANTIC DUPLICATE CHECK] No duplicate detected")
+
+        return None
 
     # =========================================================
     # GET USER MEMORIES
@@ -306,6 +377,7 @@ class SemanticMemoryManager:
                     )
 
         return results
+    
 
     # =========================================================
     # INCREMENT ACCESS COUNT
