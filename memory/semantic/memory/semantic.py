@@ -1,7 +1,6 @@
 from multiprocessing.reduction import duplicate
 import uuid
 from datetime import datetime, timezone
-
 from database.neo4j import Neo4jClient
 
 
@@ -12,11 +11,7 @@ class SemanticMemoryManager:
         db: Neo4jClient,
     ):
         self.db = db
-
-    # =========================================================
     # ENSURE USER
-    # =========================================================
-
     def ensure_user(
         self,
         user_id: str,
@@ -38,10 +33,7 @@ class SemanticMemoryManager:
             },
         )
 
-    # =========================================================
     # CREATE
-    # =========================================================
-
     def create(
         self,
         user_id: str,
@@ -55,11 +47,7 @@ class SemanticMemoryManager:
         """
         Create a semantic memory and connect it to the user.
         """
-
-        # -----------------------------------------------------
         # Validate content
-        # -----------------------------------------------------
-        
         if check_duplicate:
             duplicate = self.check_duplicate(
                 user_id=user_id,
@@ -87,10 +75,7 @@ class SemanticMemoryManager:
 
         content = content.strip()
 
-        # -----------------------------------------------------
         # Validate scores
-        # -----------------------------------------------------
-
         importance = max(
             0.0,
             min(1.0, float(importance)),
@@ -100,21 +85,13 @@ class SemanticMemoryManager:
             0.0,
             min(1.0, float(confidence)),
         )
-
-        # -----------------------------------------------------
         # Generate ID / timestamp
-        # -----------------------------------------------------
-
         memory_id = str(uuid.uuid4())
 
         now = datetime.now(
             timezone.utc
         ).isoformat()
-
-        # -----------------------------------------------------
         # Create memory
-        # -----------------------------------------------------
-
         query = """
         MATCH (u:User {id: $user_id})
 
@@ -208,11 +185,8 @@ class SemanticMemoryManager:
         print("[SEMANTIC DUPLICATE CHECK] No duplicate detected")
 
         return None
-
-    # =========================================================
+    
     # GET USER MEMORIES
-    # =========================================================
-
     def get_by_user(
         self,
         user_id: str,
@@ -252,23 +226,24 @@ class SemanticMemoryManager:
             },
         )
 
-    # =========================================================
-    # SEARCH
-    # =========================================================
-
+    # SEARCH - Query Search
+    # In Future Implemet the sematic search using Neo4j vector similarity search.
     def search(
         self,
         user_id: str,
         query: str,
-        limit: int = 5,
+        limit: int = 2,
     ):
         """
-        Retrieve semantic memories relevant to the query.
+        Retrieve the most relevant semantic memories.
 
         Current implementation:
-            Keyword matching
-            + importance
-            + confidence
+            - Exact phrase matching
+            - Keyword coverage
+            - Keyword frequency
+            - Importance
+            - Confidence
+            - Light recency boost
 
         Future implementation:
             Neo4j vector similarity search.
@@ -276,14 +251,15 @@ class SemanticMemoryManager:
 
         cypher = """
         MATCH (u:User {id: $user_id})
-              -[:HAS_SEMANTIC_MEMORY]->
-              (m:SemanticMemory)
+            -[:HAS_SEMANTIC_MEMORY]->
+            (m:SemanticMemory)
 
         WITH
             m,
-            toLower(m.content) AS content,
-            toLower($query) AS search_query
+            toLower(trim(m.content)) AS content,
+            toLower(trim($query)) AS search_query
 
+        // Extract useful query words
         WITH
             m,
             content,
@@ -291,46 +267,122 @@ class SemanticMemoryManager:
             [
                 word IN split(search_query, " ")
                 WHERE size(trim(word)) > 2
+                AND trim(word) NOT IN [
+                    "what",
+                    "when",
+                    "where",
+                    "which",
+                    "with",
+                    "from",
+                    "that",
+                    "this",
+                    "does",
+                    "have",
+                    "about",
+                    "your",
+                    "user",
+                    "tell",
+                    "give",
+                    "show"
+                ]
             ] AS query_words
 
+        // Count how many query words appear in the memory
         WITH
             m,
+            content,
+            search_query,
             query_words,
+            size([
+                word IN query_words
+                WHERE content CONTAINS word
+            ]) AS matched_words
+
+        // Calculate keyword coverage
+        WITH
+            m,
+            content,
+            search_query,
+            query_words,
+            matched_words,
+
+            CASE
+                WHEN size(query_words) = 0 THEN 0.0
+                ELSE toFloat(matched_words) / size(query_words)
+            END AS keyword_coverage
+
+        // Exact full query / phrase matching
+        WITH
+            m,
+            content,
+            search_query,
+            query_words,
+            matched_words,
+            keyword_coverage,
+
+            CASE
+                WHEN content CONTAINS search_query
+                THEN 1.0
+                ELSE 0.0
+            END AS exact_phrase_score
+
+        // Reward multiple keyword occurrences slightly
+        WITH
+            m,
+            content,
+            search_query,
+            query_words,
+            matched_words,
+            keyword_coverage,
+            exact_phrase_score,
 
             reduce(
-                score = 0.0,
+                frequency_score = 0.0,
                 word IN query_words |
 
-                score +
+                frequency_score +
                 CASE
-                    WHEN content CONTAINS trim(word)
+                    WHEN size(split(content, word)) > 1
                     THEN 1.0
                     ELSE 0.0
                 END
-            ) AS keyword_score
+            ) AS raw_frequency_score
 
         WITH
             m,
-            keyword_score,
+            keyword_coverage,
+            exact_phrase_score,
 
             CASE
-                WHEN size(query_words) = 0
-                THEN 0.0
+                WHEN size(query_words) = 0 THEN 0.0
+                ELSE raw_frequency_score / size(query_words)
+            END AS frequency_score
 
-                ELSE
-                    keyword_score / size(query_words)
-            END AS relevance_score
+        // Main relevance score
+        WITH
+            m,
+
+            (
+                keyword_coverage * 0.65
+                +
+                exact_phrase_score * 0.25
+                +
+                frequency_score * 0.10
+            ) AS relevance_score
+
+        // Only rank memories that actually match the query
+        WHERE relevance_score > 0
 
         WITH
             m,
             relevance_score,
 
             (
-                relevance_score * 0.60
+                relevance_score * 0.75
                 +
-                coalesce(m.importance, 0.5) * 0.25
+                coalesce(m.importance, 0.5) * 0.15
                 +
-                coalesce(m.confidence, 0.5) * 0.15
+                coalesce(m.confidence, 0.5) * 0.10
             ) AS final_score
 
         RETURN
@@ -342,11 +394,13 @@ class SemanticMemoryManager:
             m.created_at AS created_at,
             m.updated_at AS updated_at,
             m.access_count AS access_count,
-
             relevance_score,
             final_score
 
-        ORDER BY final_score DESC
+        ORDER BY
+            final_score DESC,
+            relevance_score DESC,
+            m.importance DESC
 
         LIMIT $limit
         """
@@ -360,29 +414,16 @@ class SemanticMemoryManager:
             },
         )
 
-        # -----------------------------------------------------
-        # Track memory access
-        # -----------------------------------------------------
-
         if results:
-
             for memory in results:
-
                 memory_id = memory.get("id")
 
                 if memory_id:
-
-                    self.increment_access_count(
-                        memory_id
-                    )
+                    self.increment_access_count(memory_id)
 
         return results
-    
-
-    # =========================================================
+        
     # INCREMENT ACCESS COUNT
-    # =========================================================
-
     def increment_access_count(
         self,
         memory_id: str,

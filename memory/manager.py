@@ -17,10 +17,7 @@ class MemoryManager:
         self.episodic = episodic_manager
         self.procedural = procedural_manager
 
-    # =========================================================
     # INDIVIDUAL MEMORY SEARCH
-    # =========================================================
-
     def search_semantic_memory(
         self,
         user_id: str,
