@@ -11,7 +11,6 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
 
-
 class ChatResponse(BaseModel):
     response: str
 
@@ -20,28 +19,20 @@ router = APIRouter(
     tags=["Chat"]
 )
 
-
 @router.post("",response_model=ChatResponse)
 def chat(request: ChatRequest):
     initial_state = {
         "user_id": request.user_id,
         "session_id": request.session_id,
         "user_input": request.message,
-
         "messages": [],
-
         "required_memories": [],
-
         "semantic_memories": [],
         "episodic_memories": [],
         "procedural_memories": [],
-
         "context": "",
-
         "response": "",
-
         "extracted_memories": [],
-
         "should_save_memory": False
     }
 
