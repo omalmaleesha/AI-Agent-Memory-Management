@@ -4,6 +4,13 @@ from groq import AuthenticationError
 from langchain_groq import ChatGroq
 from config.settings import settings
 import json
+from llm.fallbacks.memory_router_fallback import (
+    MemoryRouterFallback,
+)
+
+from llm.fallbacks.memory_extractor_fallback import (
+    MemoryExtractorFallback,
+)
 
 class LLMService:
     def __init__(self):
@@ -16,6 +23,13 @@ class LLMService:
             model=settings.GROQ_MODEL,
             temperature=0.2,
         )
+        self.memory_router_fallback = (
+            MemoryRouterFallback()
+        )
+
+        self.memory_extractor_fallback = (
+            MemoryExtractorFallback()
+        )
 
     # PROMPT HELPERS
     def _extract_section(self,prompt: str,marker: str,) -> str:
@@ -25,141 +39,6 @@ class LLMService:
         if "\n\n" in section:
             section = section.split("\n\n", 1)[0]
         return section.strip()
-
-    # LOCAL MEMORY ROUTING FALLBACK
-    def _route_memories(self,user_request: str,) -> list[str]:
-        text = user_request.lower()
-        required: list[str] = []
-        # SEMANTIC
-        if any(
-            keyword in text
-            for keyword in [
-                "remember",
-                "about me",
-                "profile",
-                "preference",
-                "prefer",
-                "skill",
-                "technology",
-                "stack",
-                "name",
-                "email",
-            ]
-        ):
-            required.append("semantic")
-        # EPISODIC
-        if any(
-            keyword in text
-            for keyword in [
-                "yesterday",
-                "last time",
-                "previous",
-                "earlier",
-                "discuss",
-                "conversation",
-                "task",
-                "meeting",
-                "event",
-                "what did we",
-                "when did we",
-            ]
-        ):
-            required.append("episodic")
-        # PROCEDURAL
-        if any(
-            keyword in text
-            for keyword in [
-                "how do i",
-                "how should i",
-                "how to",
-                "deploy",
-                "workflow",
-                "rule",
-                "instruction",
-                "procedure",
-                "setup",
-                "configure",
-                "implement",
-                "fix",
-            ]
-        ):
-            required.append("procedural")
-        return list(dict.fromkeys(required))
-    # LOCAL MEMORY EXTRACTION FALLBACK
-    def _extract_memories(self,prompt: str,):
-        user_input = self._extract_section(
-            prompt,
-            "USER:",
-        )
-        assistant_response = self._extract_section(
-            prompt,
-            "ASSISTANT:",
-        )
-        combined = (
-            f"{user_input}\n{assistant_response}"
-        ).lower()
-
-        should_save = any(
-            keyword in combined
-            for keyword in [
-                "my name is",
-                "i am",
-                "i like",
-                "i prefer",
-                "remember",
-                "my goal",
-                "i work with",
-                "i use",
-                "always",
-                "never",
-            ]
-        )
-
-        memories = []
-
-        if should_save:
-            memory_type = "semantic"
-            if any(
-                keyword in combined
-                for keyword in [
-                    "workflow",
-                    "how to",
-                    "procedure",
-                    "step",
-                    "deploy",
-                    "configure",
-                    "setup",
-                ]
-            ):
-                memory_type = "procedural"
-            elif any(
-                keyword in combined
-                for keyword in [
-                    "yesterday",
-                    "today",
-                    "last time",
-                    "meeting",
-                    "event",
-                    "task",
-                ]
-            ):
-                memory_type = "episodic"
-            memories.append(
-                {
-                    "type": memory_type,
-                    "content": (
-                        user_input.strip()
-                        or assistant_response.strip()
-                    ),
-                    "importance": 0.6,
-                    "confidence": 0.5,
-                }
-            )
-
-        return {
-            "should_save": should_save,
-            "memories": memories,
-        }
 
     # FALLBACK RESPONSE
     def _generate_fallback_response(self,prompt: str,) -> str:
@@ -207,11 +86,7 @@ class LLMService:
             "__name__",
             "",
         )
-
-        # -----------------------------------------------------
         # MEMORY ROUTING
-        # -----------------------------------------------------
-
         if schema_name == "MemoryRouting":
 
             user_request = self._extract_section(
@@ -231,19 +106,14 @@ class LLMService:
                 )
             }
 
-        # -----------------------------------------------------
         # MEMORY EXTRACTION
-        # -----------------------------------------------------
-
         elif schema_name == "MemoryExtraction":
 
             payload = self._extract_memories(
                 prompt
             )
 
-        # -----------------------------------------------------
         # UNKNOWN SCHEMA
-        # -----------------------------------------------------
 
         else:
             payload = {}
@@ -263,9 +133,7 @@ class LLMService:
 
             raise
 
-    # =========================================================
     # GET MODEL
-    # =========================================================
 
     def get_model(self) -> ChatGroq | None:
         """
@@ -274,9 +142,7 @@ class LLMService:
 
         return self.model
 
-    # =========================================================
     # NORMAL INVOKE
-    # =========================================================
 
     def invoke(
         self,
@@ -305,10 +171,7 @@ class LLMService:
                 response_format=SomePydanticModel
             )
         """
-
-        # =========================================================
         # NO MODEL / NO API KEY
-        # =========================================================
 
         if not self.available or self.model is None:
 
@@ -330,11 +193,7 @@ class LLMService:
                 )
 
             return self._fallback_message(prompt)
-
-        # =========================================================
         # GROQ JSON MODE
-        # =========================================================
-
         if isinstance(response_format, dict):
 
             try:
@@ -377,10 +236,7 @@ class LLMService:
                     )
                 )
 
-        # =========================================================
         # PYDANTIC STRUCTURED OUTPUT
-        # =========================================================
-
         if response_format is not None:
 
             try:
@@ -416,10 +272,7 @@ class LLMService:
                     prompt,
                 )
 
-        # =========================================================
         # NORMAL TEXT OUTPUT
-        # =========================================================
-
         try:
 
             return self.model.invoke(
@@ -445,10 +298,7 @@ class LLMService:
 
             return self._fallback_message(prompt)
 
-    # =========================================================
     # ASYNC INVOKE
-    # =========================================================
-
     async def ainvoke(
         self,
         prompt: str,
@@ -458,11 +308,6 @@ class LLMService:
         """
         Async equivalent of invoke().
         """
-
-        # -----------------------------------------------------
-        # NO API KEY
-        # -----------------------------------------------------
-
         if not self.available or self.model is None:
 
             if response_format is not None:
@@ -474,10 +319,6 @@ class LLMService:
             return self._fallback_message(
                 prompt
             )
-
-        # -----------------------------------------------------
-        # STRUCTURED OUTPUT
-        # -----------------------------------------------------
 
         if response_format is not None:
 
@@ -513,10 +354,6 @@ class LLMService:
                     response_format,
                     prompt,
                 )
-
-        # -----------------------------------------------------
-        # NORMAL OUTPUT
-        # -----------------------------------------------------
 
         try:
 
