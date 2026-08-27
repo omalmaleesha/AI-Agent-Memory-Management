@@ -11,6 +11,7 @@ class SemanticMemoryManager:
         db: Neo4jClient,
     ):
         self.db = db
+    
     # ENSURE USER
     def ensure_user(
         self,
