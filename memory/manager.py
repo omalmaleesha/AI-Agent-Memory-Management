@@ -66,10 +66,7 @@ class MemoryManager:
             limit=limit,
         )
 
-    # =========================================================
     # MULTI MEMORY RETRIEVAL
-    # =========================================================
-
     def search_all_memories(
         self,
         user_id: str,
@@ -86,10 +83,6 @@ class MemoryManager:
             "episodic": [],
             "procedural": [],
         }
-
-        # -----------------------------------------------------
-        # Semantic
-        # -----------------------------------------------------
 
         try:
             print("[SEMANTIC SEARCH START]")
@@ -108,9 +101,6 @@ class MemoryManager:
         except Exception as e:
             print(f"[SEMANTIC SEARCH ERROR] {repr(e)}")
 
-        # -----------------------------------------------------
-        # Episodic
-        # -----------------------------------------------------
 
         try:
             print("[EPISODIC SEARCH START]")
@@ -128,10 +118,6 @@ class MemoryManager:
 
         except Exception as e:
             print(f"[EPISODIC SEARCH ERROR] {repr(e)}")
-
-        # -----------------------------------------------------
-        # Procedural
-        # -----------------------------------------------------
 
         try:
             print("[PROCEDURAL SEARCH START]")
@@ -153,11 +139,8 @@ class MemoryManager:
         print("[MULTI MEMORY SEARCH COMPLETE]")
 
         return results
-
-    # =========================================================
+    
     # MEMORY SCORING
-    # =========================================================
-
     def score_memories(
         self,
         memories: dict[str, list],
@@ -183,59 +166,30 @@ class MemoryManager:
         for memory_type, items in memories.items():
 
             for item in items:
-
-                # -------------------------------------------------
-                # Similarity
-                # -------------------------------------------------
-
                 similarity = self._get_score(
                     item,
                     "similarity",
                     default=0.0,
                 )
-
-                # -------------------------------------------------
-                # Importance
-                # -------------------------------------------------
-
                 importance = self._get_score(
                     item,
                     "importance",
                     default=0.5,
                 )
-
-                # -------------------------------------------------
-                # Confidence
-                # -------------------------------------------------
-
                 confidence = self._get_score(
                     item,
                     "confidence",
                     default=0.5,
                 )
-
-                # -------------------------------------------------
-                # Recency
-                # -------------------------------------------------
-
                 recency = self._get_score(
                     item,
                     "recency",
                     default=0.5,
                 )
-
-                # -------------------------------------------------
-                # Type weight
-                # -------------------------------------------------
-
                 type_weight = memory_type_weights.get(
                     memory_type,
                     1.0,
                 )
-
-                # -------------------------------------------------
-                # Final score
-                # -------------------------------------------------
 
                 final_score = (
                     similarity * 0.50
@@ -264,10 +218,7 @@ class MemoryManager:
 
         return scored_memories
     
-    
-    # =========================================================
-# MEMORY STORAGE
-# =========================================================
+    # MEMORY STORAGE
 
     def store_memory(
         self,
@@ -285,11 +236,6 @@ class MemoryManager:
 
 
         try:
-
-            # -------------------------------------------------
-            # SEMANTIC MEMORY
-            # -------------------------------------------------
-
             if memory_type == "semantic":
 
                 result = self.semantic.create(
@@ -299,11 +245,7 @@ class MemoryManager:
                     confidence=confidence,
                     check_duplicate=True,
                 )
-
-            # -------------------------------------------------
-            # EPISODIC MEMORY
-            # -------------------------------------------------
-
+                
             elif memory_type == "episodic":
 
                 result = self.episodic.create(
@@ -314,10 +256,6 @@ class MemoryManager:
                     confidence=confidence,
                     check_duplicate=True,
                 )
-
-            # -------------------------------------------------
-            # PROCEDURAL MEMORY
-            # -------------------------------------------------
 
             elif memory_type == "procedural":
 
@@ -352,9 +290,7 @@ class MemoryManager:
 
             raise
 
-    # =========================================================
     # MEMORY FUSION
-    # =========================================================
 
     def fuse_memories(
         self,
@@ -391,9 +327,7 @@ class MemoryManager:
 
         return fused
 
-    # =========================================================
     # COMPLETE MEMORY RETRIEVAL PIPELINE
-    # =========================================================
 
     def retrieve(
         self,
@@ -435,9 +369,7 @@ class MemoryManager:
 
         return fused
 
-    # =========================================================
     # HELPERS
-    # =========================================================
 
     @staticmethod
     def _get_score(
@@ -469,9 +401,7 @@ class MemoryManager:
         )
 
 
-# =============================================================
-# INITIALIZATION
-# =============================================================
+    # INITIALIZATION
 
 neo4j_client = Neo4jClient()
 
