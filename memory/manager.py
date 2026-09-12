@@ -219,7 +219,6 @@ class MemoryManager:
         return scored_memories
     
     # MEMORY STORAGE
-
     def store_memory(
         self,
         user_id: str,
@@ -291,7 +290,6 @@ class MemoryManager:
             raise
 
     # MEMORY FUSION
-
     def fuse_memories(
         self,
         scored_memories: list[dict[str, Any]],
@@ -328,7 +326,6 @@ class MemoryManager:
         return fused
 
     # COMPLETE MEMORY RETRIEVAL PIPELINE
-
     def retrieve(
         self,
         user_id: str,
@@ -370,7 +367,6 @@ class MemoryManager:
         return fused
 
     # HELPERS
-
     @staticmethod
     def _get_score(
         item: Any,
@@ -402,7 +398,6 @@ class MemoryManager:
 
 
     # INITIALIZATION
-
 neo4j_client = Neo4jClient()
 
 semantic_manager = SemanticMemoryManager(
